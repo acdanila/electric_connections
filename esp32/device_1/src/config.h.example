@@ -1,0 +1,27 @@
+// WiFi Configuration
+// Copy this file to config.h and update with your actual credentials
+
+#ifndef CONFIG_H
+#define CONFIG_H
+
+// WiFi Credentials
+const char* WIFI_SSID = "YOUR_WIFI_NETWORK_NAME";
+const char* WIFI_PASSWORD = "YOUR_WIFI_PASSWORD";
+
+// UDP Server Configuration
+const char* UDP_SERVER_IP = "192.168.1.100";  // IP of computer running broker
+const int UDP_SERVER_PORT = 8888;             // UDP port
+
+// Device Configuration
+const int DEVICE_ID = 1;  // Unique ID for this device
+
+// Pulse Sensor Calibration (adjust based on your sensor)
+const int PULSE_THRESHOLD = 2048;    // ADC threshold for pulse detection
+const int MIN_BPM = 40;              // Minimum valid BPM
+const int MAX_BPM = 200;             // Maximum valid BPM
+
+// Debug Configuration
+#define DEBUG_PULSE_SENSOR true
+#define DEBUG_NETWORK true
+
+#endif 

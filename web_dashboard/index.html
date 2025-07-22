@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BPM</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="dashboard">
+        <div class="connection-status" id="connectionStatus">
+            <span class="status-dot"></span>
+        </div>
+
+        <main class="main-content">
+            <!-- User 1 Section -->
+            <div class="user-section user-1" id="user1Section">
+                <h2 class="user-name" id="user1Name">User 1</h2>
+
+                <div class="heart-container">
+                    <div class="heart" id="heart1"></div>
+                </div>
+
+                <div class="bpm-display">
+                    <div class="bpm-number" id="bpm1">--</div>
+                </div>
+            </div>
+
+            <!-- Sync Indicator -->
+            <div class="sync-section" id="syncSection">
+                <div class="sync-indicator" id="syncIndicator">
+                    <div class="connection-line" id="connectionLine"></div>
+                </div>
+            </div>
+
+            <!-- User 2 Section -->
+            <div class="user-section user-2" id="user2Section">
+                <h2 class="user-name" id="user2Name">User 2</h2>
+
+                <div class="heart-container">
+                    <div class="heart" id="heart2"></div>
+                </div>
+
+                <div class="bpm-display">
+                    <div class="bpm-number" id="bpm2">--</div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="dashboard.js"></script>
+</body>
+</html>

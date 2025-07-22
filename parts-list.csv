@@ -1,0 +1,16 @@
+Component,Quantity,Unit Price (USD),Total Price (USD),Description,Supplier,Part Number
+ESP32 DevKit Board,2,15.00,30.00,ESP32 development board with WiFi and Bluetooth,Amazon/Adafruit,ESP32-DEVKITV1
+Analog Pulse Sensor,2,25.00,50.00,Heart rate sensor for analog input,Amazon/SparkFun,SEN-11574
+3.7V LiPo Battery 1000mAh,2,12.00,24.00,Rechargeable lithium polymer battery,Amazon/Adafruit,ADA258
+TP4056 Charger Module,2,3.00,6.00,USB charging module for LiPo batteries,Amazon/AliExpress,TP4056-1A
+Slide Switch SPDT,2,2.00,4.00,Single pole double throw slide switch,Amazon/Digikey,EG1903
+Mini Breadboard,2,3.00,6.00,Half-size solderless breadboard,Amazon/Adafruit,ADA64
+Jumper Wires M-M,1 Pack,5.00,5.00,Male to male jumper wires (40 pack),Amazon,EDGELEC-40P
+Jumper Wires M-F,1 Pack,5.00,5.00,Male to female jumper wires (40 pack),Amazon,EDGELEC-40P-MF
+Resistor 10kΩ,4,0.10,0.40,Pull-up resistor for reliable connections,Amazon/Digikey,CF14JT10K0
+,,,,,,
+,,,,,,
+,,Sub Total,,130.40,,
+,,Tax (8.5%),,11.09,,
+,,Shipping,,15.00,,
+,,Grand Total,,156.49,, 
