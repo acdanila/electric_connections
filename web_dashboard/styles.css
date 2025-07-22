@@ -13,7 +13,7 @@ body {
     align-items: center;
     justify-content: center;
     overflow: hidden;
-    transition: all 1s ease;
+    transition: background 2s ease; /* Smooth background transitions */
 }
 
 /* Edge gradient that changes color based on sync state */
@@ -73,6 +73,7 @@ body {
     flex-direction: column;
     align-items: center;
     gap: 40px;
+    transition: all 2s ease; /* Smooth transitions for all properties */
 }
 
 .user-name {
@@ -83,35 +84,144 @@ body {
     text-align: center;
 }
 
-/* Simple heart container */
-.heart-container {
+/* Point Circle System - Touch Designer Aesthetic */
+.point-circle-container {
     position: relative;
-    width: 120px;
-    height: 120px;
+    width: 200px;
+    height: 200px;
     display: flex;
     align-items: center;
     justify-content: center;
+    --circle-offset: 0px; /* How much to move circles toward/away from center */
+    transition: transform 2s ease; /* Smooth movement transitions */
 }
 
-.heart {
+.point-circle-container.user-1 {
+    transform: translateX(var(--circle-offset));
+}
+
+.point-circle-container.user-2 {
+    transform: translateX(calc(-1 * var(--circle-offset)));
+}
+
+.point-circle {
     position: relative;
-    width: 60px;
-    height: 60px;
-    --heartbeat-duration: 1s;
+    width: 160px;
+    height: 160px;
+    --base-radius: 80px;
+    --circle-radius: var(--base-radius); /* Keep circle radius constant */
+    --chaos-factor: 0; /* 0 = stable (60 BPM), 1 = max chaos (120 BPM) */
+    --point-size: 8px;
+    --animation-speed: 2s;
+    transition: all 2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.circle-point {
+    position: absolute;
+    width: var(--point-size);
+    height: var(--point-size);
+    background: radial-gradient(circle at center, rgba(var(--sync-color), 0.9), rgba(var(--sync-color), 0.4));
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(var(--sync-color), 0.8), rgba(var(--sync-color), 0.3));
-    border: 2px solid rgb(var(--sync-color));
-    animation: simple-pulse var(--heartbeat-duration, 1s) infinite ease-in-out;
-    box-shadow: 0 0 20px rgba(var(--sync-color), 0.6);
-    transition: all 0.3s ease;
+    box-shadow: 0 0 15px rgba(var(--sync-color), 0.6);
+    transition: all 2s cubic-bezier(0.4, 0, 0.2, 1);
     transform-origin: center;
 }
 
-.pulse-ring-2 {
-    animation-delay: calc(var(--heartbeat-duration, 1s) * 1);
+/* Dynamic positioning based on sync factor - points move toward center as they sync */
+.circle-point.point-1 {
+    left: calc(50% + var(--circle-radius) - var(--point-size) / 2);
+    top: calc(50% + 0px - var(--point-size) / 2);
+}
+.circle-point.point-2 {
+    left: calc(50% + var(--circle-radius) * 0.95 - var(--point-size) / 2);
+    top: calc(50% + var(--circle-radius) * 0.31 - var(--point-size) / 2);
+}
+.circle-point.point-3 {
+    left: calc(50% + var(--circle-radius) * 0.78 - var(--point-size) / 2);
+    top: calc(50% + var(--circle-radius) * 0.59 - var(--point-size) / 2);
+}
+.circle-point.point-4 {
+    left: calc(50% + var(--circle-radius) * 0.49 - var(--point-size) / 2);
+    top: calc(50% + var(--circle-radius) * 0.81 - var(--point-size) / 2);
+}
+.circle-point.point-5 {
+    left: calc(50% + var(--circle-radius) * 0.12 - var(--point-size) / 2);
+    top: calc(50% + var(--circle-radius) * 0.95 - var(--point-size) / 2);
+}
+.circle-point.point-6 {
+    left: calc(50% + 0px - var(--point-size) / 2);
+    top: calc(50% + var(--circle-radius) - var(--point-size) / 2);
+}
+.circle-point.point-7 {
+    left: calc(50% - var(--circle-radius) * 0.31 - var(--point-size) / 2);
+    top: calc(50% + var(--circle-radius) * 0.95 - var(--point-size) / 2);
+}
+.circle-point.point-8 {
+    left: calc(50% - var(--circle-radius) * 0.59 - var(--point-size) / 2);
+    top: calc(50% + var(--circle-radius) * 0.78 - var(--point-size) / 2);
+}
+.circle-point.point-9 {
+    left: calc(50% - var(--circle-radius) * 0.81 - var(--point-size) / 2);
+    top: calc(50% + var(--circle-radius) * 0.49 - var(--point-size) / 2);
+}
+.circle-point.point-10 {
+    left: calc(50% - var(--circle-radius) * 0.95 - var(--point-size) / 2);
+    top: calc(50% + var(--circle-radius) * 0.12 - var(--point-size) / 2);
+}
+.circle-point.point-11 {
+    left: calc(50% - var(--circle-radius) - var(--point-size) / 2);
+    top: calc(50% + 0px - var(--point-size) / 2);
+}
+.circle-point.point-12 {
+    left: calc(50% - var(--circle-radius) * 0.95 - var(--point-size) / 2);
+    top: calc(50% - var(--circle-radius) * 0.31 - var(--point-size) / 2);
+}
+.circle-point.point-13 {
+    left: calc(50% - var(--circle-radius) * 0.78 - var(--point-size) / 2);
+    top: calc(50% - var(--circle-radius) * 0.59 - var(--point-size) / 2);
+}
+.circle-point.point-14 {
+    left: calc(50% - var(--circle-radius) * 0.49 - var(--point-size) / 2);
+    top: calc(50% - var(--circle-radius) * 0.81 - var(--point-size) / 2);
+}
+.circle-point.point-15 {
+    left: calc(50% - var(--circle-radius) * 0.12 - var(--point-size) / 2);
+    top: calc(50% - var(--circle-radius) * 0.95 - var(--point-size) / 2);
+}
+.circle-point.point-16 {
+    left: calc(50% + 0px - var(--point-size) / 2);
+    top: calc(50% - var(--circle-radius) - var(--point-size) / 2);
+}
+.circle-point.point-17 {
+    left: calc(50% + var(--circle-radius) * 0.31 - var(--point-size) / 2);
+    top: calc(50% - var(--circle-radius) * 0.95 - var(--point-size) / 2);
+}
+.circle-point.point-18 {
+    left: calc(50% + var(--circle-radius) * 0.59 - var(--point-size) / 2);
+    top: calc(50% - var(--circle-radius) * 0.78 - var(--point-size) / 2);
+}
+.circle-point.point-19 {
+    left: calc(50% + var(--circle-radius) * 0.81 - var(--point-size) / 2);
+    top: calc(50% - var(--circle-radius) * 0.49 - var(--point-size) / 2);
+}
+.circle-point.point-20 {
+    left: calc(50% + var(--circle-radius) * 0.95 - var(--point-size) / 2);
+    top: calc(50% - var(--circle-radius) * 0.12 - var(--point-size) / 2);
 }
 
+/* Base animation that responds to chaos factor */
+.circle-point {
+    animation: dynamicRotation var(--animation-speed) linear infinite;
+}
 
+/* Sync section - clean and minimal */
+.sync-section {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    width: 100px; /* Minimal space */
+}
 
 /* BPM Display */
 .bpm-display {
@@ -126,41 +236,7 @@ body {
     font-variant-numeric: tabular-nums;
 }
 
-/* Sync section */
-.sync-section {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-}
 
-.sync-indicator {
-    position: relative;
-}
-
-.connection-line {
-    width: 120px;
-    height: 3px;
-    background: linear-gradient(90deg, rgb(var(--sync-color)), rgba(var(--sync-color), 0.8));
-    border-radius: 2px;
-    transition: all 0.8s ease;
-    box-shadow: 0 0 10px rgba(var(--sync-color), 0.4);
-}
-
-
-
-/* Dynamic heartbeat speeds */
-.heart.slow {
-    --heartbeat-duration: 1.2s;
-}
-
-.heart.normal {
-    --heartbeat-duration: 1s;
-}
-
-.heart.fast {
-    --heartbeat-duration: 0.7s;
-}
 
 /* Dynamic color system based on BPM difference gradient */
 :root {
@@ -168,24 +244,9 @@ body {
     --sync-difference: 20;
 }
 
+/* User sections maintain smooth transitions */
 .user-section {
-    transition: all 0.8s ease;
-}
-
-/* Smooth pulse animation */
-@keyframes simple-pulse {
-    0% {
-        transform: scale(1);
-        opacity: 1;
-    }
-    50% {
-        transform: scale(1.15);
-        opacity: 0.9;
-    }
-    100% {
-        transform: scale(1);
-        opacity: 1;
-    }
+    transition: all 2s ease; /* Smooth transitions for all properties */
 }
 
 /* Responsive design */
@@ -209,11 +270,27 @@ body {
     }
 
     .sync-section {
-        transform: rotate(90deg);
+        width: 50px; /* Even more minimal on mobile */
     }
 
-    .connection-line {
-        width: 60px;
+    .point-circle-container {
+        width: 150px;
+        height: 150px;
+    }
+
+    .point-circle {
+        width: 120px;
+        height: 120px;
+        --base-radius: 60px; /* Smaller base radius on mobile */
+    }
+
+    /* Reduce movement on mobile for better visibility */
+    .point-circle-container.user-1 {
+        transform: translateX(calc(var(--circle-offset) * 0.6));
+    }
+
+    .point-circle-container.user-2 {
+        transform: translateX(calc(-1 * var(--circle-offset) * 0.6));
     }
 
     .bpm-number {
@@ -222,5 +299,80 @@ body {
 
     .user-name {
         font-size: 20px;
+    }
+}
+
+/* No data state - dots meld into one in center */
+.point-circle.no-data .circle-point {
+    animation: meldingPulse 4s ease-in-out infinite;
+    opacity: 0.4;
+    /* Move all points to center */
+    left: calc(50% - var(--point-size) / 2) !important;
+    top: calc(50% - var(--point-size) / 2) !important;
+}
+
+@keyframes meldingPulse {
+    0%, 100% {
+        transform: scale(0.8);
+        opacity: 0.3;
+    }
+    50% {
+        transform: scale(1.2);
+        opacity: 0.6;
+    }
+}
+
+/* Dynamic animation keyframe that responds to chaos and sync factors */
+@keyframes dynamicRotation {
+    0% {
+        transform:
+            rotate(0deg)
+            scale(calc(0.8 + var(--chaos-factor) * 0.4))
+            translateX(calc(var(--chaos-factor) * 15px))
+            translateY(calc(var(--chaos-factor) * 10px));
+        opacity: calc(0.7 + var(--chaos-factor) * 0.3);
+    }
+    25% {
+        transform:
+            rotate(90deg)
+            scale(calc(0.9 + var(--chaos-factor) * 0.5))
+            translateX(calc(var(--chaos-factor) * -12px))
+            translateY(calc(var(--chaos-factor) * 18px));
+        opacity: calc(0.8 + var(--chaos-factor) * 0.2);
+    }
+    50% {
+        transform:
+            rotate(180deg)
+            scale(calc(1.0 + var(--chaos-factor) * 0.6))
+            translateX(calc(var(--chaos-factor) * 20px))
+            translateY(calc(var(--chaos-factor) * -15px));
+        opacity: 1;
+    }
+    75% {
+        transform:
+            rotate(270deg)
+            scale(calc(0.9 + var(--chaos-factor) * 0.3))
+            translateX(calc(var(--chaos-factor) * -18px))
+            translateY(calc(var(--chaos-factor) * -8px));
+        opacity: calc(0.8 + var(--chaos-factor) * 0.2);
+    }
+    100% {
+        transform:
+            rotate(360deg)
+            scale(calc(0.8 + var(--chaos-factor) * 0.4))
+            translateX(calc(var(--chaos-factor) * 15px))
+            translateY(calc(var(--chaos-factor) * 10px));
+        opacity: calc(0.7 + var(--chaos-factor) * 0.3);
+    }
+}
+
+@keyframes restingPulse {
+    0%, 100% {
+        transform: scale(0.6);
+        opacity: 0.2;
+    }
+    50% {
+        transform: scale(0.8);
+        opacity: 0.4;
     }
 }
