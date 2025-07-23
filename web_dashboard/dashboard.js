@@ -38,7 +38,7 @@ class BPMDashboard {
         this.lastUpdateTimes = { 1: 0, 2: 0 }; // Throttle updates
         this.updateFrequency = 3000; // Max once every 3 seconds (reduced from 2s)
         this.noHeartRateThreshold = 2; // Show "--" after 2 consecutive no-heart-rate readings
-        this.dataTimeoutMs = 8000; // Show "--" after 8 seconds of no data (increased for stability)
+        this.dataTimeoutMs = 2000; // Show "--" after 2 seconds of no data (quick response to disconnection)
         this.readingSkipCount = 2; // Process every 2nd reading for stability
         this.lastSyncDifference = undefined; // Track previous sync difference for change detection
 
