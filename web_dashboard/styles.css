@@ -35,26 +35,72 @@ body {
 
 /* Connection status - very subtle */
 .connection-status {
-    position: absolute;
+    position: fixed;
     top: 20px;
-    right: 20px;
-    z-index: 100;
+    left: 20px;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background: rgba(0, 0, 0, 0.8);
+    padding: 10px 15px;
+    border-radius: 25px;
+    backdrop-filter: blur(10px);
 }
 
 .status-dot {
-    width: 8px;
-    height: 8px;
+    width: 12px;
+    height: 12px;
     border-radius: 50%;
-    background: #333;
-    display: block;
+    background: #ff4757;
+    transition: all 0.3s ease;
+    animation: pulse 2s infinite;
 }
 
 .status-dot.connected {
-    background: #22c55e;
+    background: #2ed573;
+    animation: none;
 }
 
 .status-dot.disconnected {
-    background: #ef4444;
+    background: #ff4757;
+    animation: pulse 2s infinite;
+}
+
+.audio-toggle {
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 50%;
+    width: 35px;
+    height: 35px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    opacity: 0.7;
+}
+
+.audio-toggle:hover {
+    background: rgba(255, 255, 255, 0.1);
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+.audio-toggle.enabled {
+    opacity: 1;
+    animation: audioGlow 2s ease-in-out infinite alternate;
+}
+
+@keyframes audioGlow {
+    from {
+        box-shadow: 0 0 5px rgba(var(--sync-color), 0.5);
+    }
+    to {
+        box-shadow: 0 0 15px rgba(var(--sync-color), 0.8);
+    }
 }
 
 /* Main layout */
@@ -65,9 +111,20 @@ body {
     align-items: center;
     padding: 0 60px;
     gap: 80px;
+  }
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 0.6;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.1);
+    }
 }
 
-/* User sections */
+  /* User sections */
 .user-section {
     display: flex;
     flex-direction: column;

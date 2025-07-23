@@ -3,6 +3,362 @@
  * Real-time BPM monitoring with sync detection and animations
  */
 
+/**
+ * Audio Engine for Heart Rate Sync
+ * Creates harmonious sounds when in sync, chaotic when not
+ */
+class AudioEngine {
+    constructor() {
+        this.audioContext = null;
+        this.masterGain = null;
+        this.isEnabled = false;
+        this.isPlaying = false;
+
+        // Oscillators for each user
+        this.user1Oscillator = null;
+        this.user2Oscillator = null;
+        this.user1Gain = null;
+        this.user2Gain = null;
+
+        // Rhythm system
+        this.rhythmInterval = null;
+        this.lastBeatTime = 0;
+
+        // Audio parameters
+        this.baseFrequency = 220; // A3 note
+        this.maxVolume = 0.15; // Lower volume for MacBook speakers
+        this.currentDifference = 20; // Start with max difference (no sync)
+
+        this.init();
+    }
+
+    async init() {
+        try {
+            // Create audio context (requires user interaction first)
+            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+            // Create master gain node
+            this.masterGain = this.audioContext.createGain();
+            this.masterGain.connect(this.audioContext.destination);
+            this.masterGain.gain.value = 0; // Start muted
+
+            console.log('🎵 Audio engine initialized');
+        } catch (error) {
+            console.error('❌ Failed to initialize audio:', error);
+        }
+    }
+
+        async enable() {
+        if (!this.audioContext) {
+            console.error('❌ Audio context not initialized');
+            return false;
+        }
+
+        try {
+            // Resume audio context if needed (required after user interaction)
+            if (this.audioContext.state === 'suspended') {
+                console.log('🎵 Resuming suspended audio context...');
+                await this.audioContext.resume();
+            }
+
+            // Verify audio context is running
+            if (this.audioContext.state !== 'running') {
+                console.error('❌ Audio context failed to resume:', this.audioContext.state);
+                return false;
+            }
+
+            this.isEnabled = true;
+            console.log('🎵 Audio enabled successfully, context state:', this.audioContext.state);
+            return true;
+        } catch (error) {
+            console.error('❌ Failed to enable audio:', error);
+            return false;
+        }
+    }
+
+    disable() {
+        this.isEnabled = false;
+        this.stopAudio();
+        console.log('🔇 Audio disabled');
+    }
+
+    // Test function to verify audio is working
+    async testTone() {
+        if (!this.isEnabled || !this.audioContext) return false;
+
+        try {
+            const oscillator = this.audioContext.createOscillator();
+            const gainNode = this.audioContext.createGain();
+
+            oscillator.type = 'sine';
+            oscillator.frequency.value = 440; // A4 note
+
+            gainNode.gain.setValueAtTime(0, this.audioContext.currentTime);
+            gainNode.gain.linearRampToValueAtTime(0.1, this.audioContext.currentTime + 0.1);
+            gainNode.gain.linearRampToValueAtTime(0, this.audioContext.currentTime + 0.5);
+
+            oscillator.connect(gainNode);
+            gainNode.connect(this.audioContext.destination);
+
+            oscillator.start(this.audioContext.currentTime);
+            oscillator.stop(this.audioContext.currentTime + 0.5);
+
+            console.log('🎵 Test tone played');
+            return true;
+        } catch (error) {
+            console.error('❌ Test tone failed:', error);
+            return false;
+        }
+    }
+
+    startAudio(user1Bpm, user2Bpm, difference) {
+        if (!this.isEnabled || !this.audioContext) return;
+
+        this.stopAudio(); // Clean up any existing audio
+
+        // Check if we have valid BPM data
+        const user1Valid = user1Bpm !== "--" && user1Bpm > 0;
+        const user2Valid = user2Bpm !== "--" && user2Bpm > 0;
+
+        if (!user1Valid && !user2Valid) {
+            // No valid data - silence
+            return;
+        }
+
+        this.currentDifference = difference;
+        this.isPlaying = true;
+
+        // Create oscillators for each user (if they have valid data)
+        if (user1Valid) {
+            this.createUserOscillator(1, user1Bpm);
+        }
+
+        if (user2Valid) {
+            this.createUserOscillator(2, user2Bpm);
+        }
+
+        // Start rhythm based on average BPM
+        const avgBpm = user1Valid && user2Valid ? (user1Bpm + user2Bpm) / 2 :
+                       user1Valid ? user1Bpm : user2Bpm;
+        this.startRhythm(avgBpm);
+
+        // Fade in master volume quickly
+        this.masterGain.gain.setValueAtTime(0, this.audioContext.currentTime);
+        this.masterGain.gain.linearRampToValueAtTime(this.maxVolume, this.audioContext.currentTime + 0.1);
+
+        console.log(`🎵 Audio started: User1=${user1Valid ? user1Bpm.toFixed(1) : '--'}, User2=${user2Valid ? user2Bpm.toFixed(1) : '--'}, Diff=${difference.toFixed(1)}`);
+        console.log(`🎵 Created oscillators: User1=${!!this.user1Oscillator}, User2=${!!this.user2Oscillator}, Rhythm=${!!this.rhythmInterval}`);
+    }
+
+        createUserOscillator(userId, bpm) {
+        if (!this.audioContext || this.audioContext.state !== 'running') {
+            console.warn('❌ Audio context not ready for oscillator creation');
+            return;
+        }
+
+        try {
+            // Create oscillator and gain for this user
+            const oscillator = this.audioContext.createOscillator();
+            const gainNode = this.audioContext.createGain();
+
+            // Calculate frequency based on sync state
+            const frequency = this.calculateFrequency(userId, bpm, this.currentDifference);
+
+            // Set oscillator properties with smoother waveforms
+            oscillator.type = this.currentDifference <= 4 ? 'sine' : 'triangle'; // Triangle is gentler than sawtooth
+            oscillator.frequency.value = frequency;
+
+            // Set initial gain with gentle ramp and sustain
+            gainNode.gain.setValueAtTime(0, this.audioContext.currentTime);
+            gainNode.gain.linearRampToValueAtTime(0.4, this.audioContext.currentTime + 0.05);
+            // Hold the gain at a steady level
+            gainNode.gain.setValueAtTime(0.4, this.audioContext.currentTime + 0.1);
+
+            // Connect audio nodes
+            oscillator.connect(gainNode);
+            gainNode.connect(this.masterGain);
+
+            // Store references
+            if (userId === 1) {
+                this.user1Oscillator = oscillator;
+                this.user1Gain = gainNode;
+            } else {
+                this.user2Oscillator = oscillator;
+                this.user2Gain = gainNode;
+            }
+
+            // Start the oscillator
+            oscillator.start(this.audioContext.currentTime);
+
+            console.log(`🎵 User ${userId} oscillator: ${frequency.toFixed(1)}Hz (${bpm} BPM)`);
+        } catch (error) {
+            console.error(`❌ Failed to create oscillator for user ${userId}:`, error);
+        }
+    }
+
+    calculateFrequency(userId, bpm, difference) {
+        // Base frequencies for harmony (perfect fifth interval)
+        const user1BaseFreq = this.baseFrequency; // A3 = 220Hz
+        const user2BaseFreq = this.baseFrequency * 1.5; // E4 = 330Hz (perfect fifth)
+
+        const baseFreq = userId === 1 ? user1BaseFreq : user2BaseFreq;
+
+        if (difference <= 4) {
+            // SYNC: Perfect harmony - use pure intervals
+            return baseFreq;
+        } else {
+            // CHAOS: Add dissonance based on BPM difference
+            // More difference = more detuning
+            const chaosAmount = Math.min(difference / 20, 1); // 0 to 1
+            const detuning = chaosAmount * 50; // Up to 50Hz of detuning
+
+            // Randomly detune up or down for each user differently
+            const detuneDirection = userId === 1 ? 1 : -1;
+            return baseFreq + (detuning * detuneDirection * Math.random());
+        }
+    }
+
+    startRhythm(avgBpm) {
+        if (!this.isEnabled || this.rhythmInterval) return;
+
+        // Calculate beat interval from BPM
+        const beatInterval = (60 / avgBpm) * 1000; // Convert to milliseconds
+
+        this.rhythmInterval = setInterval(() => {
+            this.triggerBeat(this.currentDifference);
+        }, beatInterval);
+
+        console.log(`🥁 Rhythm started: ${avgBpm} BPM (${beatInterval.toFixed(0)}ms intervals)`);
+    }
+
+    triggerBeat(difference) {
+        if (!this.isEnabled || !this.audioContext) return;
+
+        const now = this.audioContext.currentTime;
+
+        // Calculate rhythm chaos based on difference
+        const chaos = Math.min(difference / 20, 1); // 0 to 1
+
+        if (difference <= 4) {
+            // SYNC: Steady, rhythmic pulses
+            this.createStableRhythmPulse(now);
+        } else {
+            // CHAOS: Irregular, jittery rhythm
+            this.createChaoticRhythmPulse(now, chaos);
+        }
+    }
+
+        createStableRhythmPulse(time) {
+        // Stable rhythm: brief volume boost on beat
+        if (this.user1Gain) {
+            this.user1Gain.gain.cancelScheduledValues(time);
+            this.user1Gain.gain.setValueAtTime(0.4, time);
+            this.user1Gain.gain.linearRampToValueAtTime(0.7, time + 0.05);
+            this.user1Gain.gain.linearRampToValueAtTime(0.4, time + 0.3);
+        }
+
+        if (this.user2Gain) {
+            this.user2Gain.gain.cancelScheduledValues(time);
+            this.user2Gain.gain.setValueAtTime(0.4, time);
+            this.user2Gain.gain.linearRampToValueAtTime(0.7, time + 0.05);
+            this.user2Gain.gain.linearRampToValueAtTime(0.4, time + 0.3);
+        }
+    }
+
+        createChaoticRhythmPulse(time, chaos) {
+        // Chaotic rhythm: random timing and volume variations
+        const randomDelay1 = Math.random() * chaos * 0.05; // Up to 50ms random delay
+        const randomDelay2 = Math.random() * chaos * 0.05;
+
+        const randomVolume1 = 0.3 + (Math.random() * 0.4); // Random volume 0.3-0.7
+        const randomVolume2 = 0.3 + (Math.random() * 0.4);
+
+        if (this.user1Gain) {
+            this.user1Gain.gain.cancelScheduledValues(time);
+            this.user1Gain.gain.setValueAtTime(0.3, time + randomDelay1);
+            this.user1Gain.gain.linearRampToValueAtTime(randomVolume1, time + randomDelay1 + 0.05);
+            this.user1Gain.gain.linearRampToValueAtTime(0.3, time + randomDelay1 + 0.4);
+        }
+
+        if (this.user2Gain) {
+            this.user2Gain.gain.cancelScheduledValues(time);
+            this.user2Gain.gain.setValueAtTime(0.3, time + randomDelay2);
+            this.user2Gain.gain.linearRampToValueAtTime(randomVolume2, time + randomDelay2 + 0.05);
+            this.user2Gain.gain.linearRampToValueAtTime(0.3, time + randomDelay2 + 0.4);
+        }
+    }
+
+        updateSync(user1Bpm, user2Bpm, difference) {
+        if (!this.isEnabled) return;
+
+        // Check if we need to restart audio (BPM changed significantly)
+        const user1Valid = user1Bpm !== "--" && user1Bpm > 0;
+        const user2Valid = user2Bpm !== "--" && user2Bpm > 0;
+
+        // Check if oscillators actually exist
+        const hasOscillators = (user1Valid && this.user1Oscillator) ||
+                              (user2Valid && this.user2Oscillator);
+
+        const shouldRestart = !this.isPlaying ||
+                             !hasOscillators ||  // Restart if oscillators missing
+                             (!user1Valid && !user2Valid) ||
+                             Math.abs(this.currentDifference - difference) > 2;
+
+        console.log(`🎵 UpdateSync: user1=${user1Valid}, user2=${user2Valid}, hasOsc=${hasOscillators}, shouldRestart=${shouldRestart}`);
+
+        if (shouldRestart) {
+            this.startAudio(user1Bpm, user2Bpm, difference);
+        } else {
+            // Just update the current difference for rhythm
+            this.currentDifference = difference;
+        }
+    }
+
+            stopAudio() {
+        console.log('🛑 Stopping audio...');
+
+        if (this.rhythmInterval) {
+            clearInterval(this.rhythmInterval);
+            this.rhythmInterval = null;
+        }
+
+        // Immediately stop and clear oscillators (no timeout!)
+        if (this.user1Oscillator) {
+            try {
+                this.user1Oscillator.stop();
+                console.log('🛑 User 1 oscillator stopped');
+            } catch (e) {
+                console.warn('⚠️ Error stopping user 1 oscillator:', e);
+            }
+            this.user1Oscillator = null;
+            this.user1Gain = null;
+        }
+
+        if (this.user2Oscillator) {
+            try {
+                this.user2Oscillator.stop();
+                console.log('🛑 User 2 oscillator stopped');
+            } catch (e) {
+                console.warn('⚠️ Error stopping user 2 oscillator:', e);
+            }
+            this.user2Oscillator = null;
+            this.user2Gain = null;
+        }
+
+        // Reset master gain immediately too
+        if (this.masterGain && this.audioContext && this.audioContext.state === 'running') {
+            try {
+                this.masterGain.gain.cancelScheduledValues(this.audioContext.currentTime);
+                this.masterGain.gain.setValueAtTime(0, this.audioContext.currentTime);
+            } catch (error) {
+                console.warn('⚠️ Error resetting master gain:', error);
+            }
+        }
+
+        this.isPlaying = false;
+    }
+}
+
 class BPMDashboard {
     constructor() {
         this.websocket = null;
@@ -41,6 +397,9 @@ class BPMDashboard {
         this.dataTimeoutMs = 2000; // Show "--" after 2 seconds of no data (quick response to disconnection)
         this.readingSkipCount = 1; // Process every 2nd reading for stability
         this.lastSyncDifference = undefined; // Track previous sync difference for change detection
+
+        // Initialize audio engine
+        this.audioEngine = new AudioEngine();
 
         this.init();
     }
@@ -342,6 +701,9 @@ class BPMDashboard {
             this.updatePointCircleSyncStates(20); // Normal starting position (0 offset)
             if (!user1Valid) this.setPointCircleState(1, 'no-data');
             if (!user2Valid) this.setPointCircleState(2, 'no-data');
+
+            // Update audio for no data state
+            this.audioEngine.updateSync(user1Bpm, user2Bpm, 20);
             return;
         }
 
@@ -360,6 +722,9 @@ class BPMDashboard {
         // Update colors and circle positioning based on actual BPM difference
         this.setSyncState(isInSync, difference);
         this.updatePointCircleSyncStates(difference);
+
+        // Update audio based on sync state
+        this.audioEngine.updateSync(user1Bpm, user2Bpm, difference);
     }
 
     updatePointCircleSyncStates(difference) {
@@ -548,6 +913,56 @@ class BPMDashboard {
             }
         });
 
+        // Handle audio toggle button
+        const audioToggle = document.getElementById('audioToggle');
+        if (audioToggle) {
+            audioToggle.addEventListener('click', async () => {
+                if (this.audioEngine.isEnabled) {
+                    // Disable audio
+                    this.audioEngine.disable();
+                    audioToggle.textContent = '🔇';
+                    audioToggle.classList.remove('enabled');
+                    audioToggle.title = 'Enable Sound Effects';
+                    console.log('🔇 Audio disabled by user');
+                                } else {
+                    // Enable audio (requires user interaction)
+                    console.log('🎵 Attempting to enable audio...');
+                    const success = await this.audioEngine.enable();
+                    if (success) {
+                        audioToggle.textContent = '🔊';
+                        audioToggle.classList.add('enabled');
+                        audioToggle.title = 'Disable Sound Effects';
+                        console.log('🔊 Audio enabled by user');
+
+                        // Play test tone to verify audio is working
+                        setTimeout(async () => {
+                            const testResult = await this.audioEngine.testTone();
+                            if (testResult) {
+                                console.log('✅ Audio test successful');
+                            } else {
+                                console.warn('⚠️ Audio test failed - check volume/permissions');
+                            }
+                        }, 100);
+
+                        // Start audio with current sync state if we have data
+                        const user1Bpm = this.users[1].bpm;
+                        const user2Bpm = this.users[2].bpm;
+                        const user1Valid = user1Bpm !== "--" && user1Bpm > 0;
+                        const user2Valid = user2Bpm !== "--" && user2Bpm > 0;
+
+                        if (user1Valid || user2Valid) {
+                            const difference = user1Valid && user2Valid ?
+                                              Math.abs(user1Bpm - user2Bpm) : 20;
+                            this.audioEngine.updateSync(user1Bpm, user2Bpm, difference);
+                        }
+                    } else {
+                        console.error('❌ Failed to enable audio');
+                        alert('Could not enable audio. Please check your browser settings and ensure you\'re not in a private/incognito window.');
+                    }
+                }
+            });
+        }
+
         // Debug: Log click on point circles for sync status
         [1, 2].forEach(userId => {
             const pointCircle = document.getElementById(`pointCircle${userId}`);
@@ -616,6 +1031,86 @@ class BPMDashboard {
 document.addEventListener('DOMContentLoaded', () => {
     console.log('🎯 DOM loaded, starting dashboard...');
     window.dashboard = new BPMDashboard();
+
+    // Add debugging functions to global window object
+    window.audioDebug = {
+        test: () => window.dashboard.audioEngine.testTone(),
+        enable: () => window.dashboard.audioEngine.enable(),
+        disable: () => window.dashboard.audioEngine.disable(),
+        status: () => {
+            const engine = window.dashboard.audioEngine;
+            console.log('🎵 Audio Status:', {
+                enabled: engine.isEnabled,
+                playing: engine.isPlaying,
+                contextState: engine.audioContext?.state,
+                currentDifference: engine.currentDifference
+            });
+        },
+        simulateSync: (bpm1 = 72, bpm2 = 73) => {
+            const diff = Math.abs(bpm1 - bpm2);
+            console.log(`🎵 Simulating sync: ${bpm1} vs ${bpm2} BPM (difference: ${diff})`);
+            window.dashboard.audioEngine.updateSync(bpm1, bpm2, diff);
+
+            // Show what should be happening
+            setTimeout(() => {
+                const engine = window.dashboard.audioEngine;
+                console.log(`🎵 After simulation:`, {
+                    enabled: engine.isEnabled,
+                    playing: engine.isPlaying,
+                    contextState: engine.audioContext?.state,
+                    currentDifference: engine.currentDifference,
+                    user1Oscillator: !!engine.user1Oscillator,
+                    user2Oscillator: !!engine.user2Oscillator,
+                    rhythmInterval: !!engine.rhythmInterval
+                });
+            }, 100);
+        }
+    };
+
+    // Add simple sustained tone test
+    window.audioDebug.sustainedTest = () => {
+        const engine = window.dashboard.audioEngine;
+        if (!engine.isEnabled || !engine.audioContext) {
+            console.log('❌ Audio not enabled');
+            return;
+        }
+
+        console.log('🎵 Playing sustained test tones...');
+
+        // Create two oscillators that play for 5 seconds
+        const osc1 = engine.audioContext.createOscillator();
+        const osc2 = engine.audioContext.createOscillator();
+        const gain1 = engine.audioContext.createGain();
+        const gain2 = engine.audioContext.createGain();
+
+        osc1.frequency.value = 220; // A3
+        osc2.frequency.value = 330; // E4
+        osc1.type = 'sine';
+        osc2.type = 'sine';
+
+        gain1.gain.setValueAtTime(0.1, engine.audioContext.currentTime);
+        gain2.gain.setValueAtTime(0.1, engine.audioContext.currentTime);
+
+        osc1.connect(gain1);
+        osc2.connect(gain2);
+        gain1.connect(engine.audioContext.destination);
+        gain2.connect(engine.audioContext.destination);
+
+        osc1.start();
+        osc2.start();
+        osc1.stop(engine.audioContext.currentTime + 5);
+        osc2.stop(engine.audioContext.currentTime + 5);
+
+        console.log('🎵 Should hear two sustained tones for 5 seconds');
+    };
+
+    console.log('🎵 Audio debug functions available:');
+    console.log('  audioDebug.test() - Play test tone');
+    console.log('  audioDebug.sustainedTest() - Play 5-second sustained tones');
+    console.log('  audioDebug.enable() - Enable audio');
+    console.log('  audioDebug.disable() - Disable audio');
+    console.log('  audioDebug.status() - Show audio status');
+    console.log('  audioDebug.simulateSync(72, 73) - Simulate BPM sync');
 });
 
 // Global error handler
