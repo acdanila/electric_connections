@@ -235,14 +235,6 @@ class BPMDashboard {
     updateUserUI(userId) {
         const user = this.users[userId];
 
-        // Update BPM display
-        const bpmElement = document.getElementById(`bpm${userId}`);
-        if (user.bpm === "--") {
-            bpmElement.textContent = "--";
-        } else {
-            bpmElement.textContent = user.bpm ? Math.round(user.bpm) : '--';
-        }
-
         // Update user section state
         const userSection = document.getElementById(`user${userId}Section`);
         if (user.bpm !== "--" && user.bpm > 0) {
@@ -350,6 +342,30 @@ class BPMDashboard {
             container1.style.setProperty('--circle-offset', `${circleOffset}px`);
             container2.style.setProperty('--circle-offset', `${circleOffset}px`);
 
+            // Calculate name offset - names stop moving when circles get close to prevent overlap
+            // Names move with circles when difference > 5 BPM, but stop when circles get too close
+            const nameMovementThreshold = 5; // BPM difference below which names stop moving
+            let nameOffset;
+
+            if (clampedDiff > nameMovementThreshold) {
+                // Names move normally with circles when they're far apart
+                nameOffset = circleOffset;
+            } else {
+                // Names stop moving when circles get close to prevent name overlap
+                // Gradually reduce name movement as circles approach
+                const reductionFactor = clampedDiff / nameMovementThreshold; // 0 to 1
+                nameOffset = circleOffset * reductionFactor * 0.3; // Reduced movement when close
+            }
+
+            // Apply name offsets to both user sections
+            const userSection1 = document.getElementById('user1Section');
+            const userSection2 = document.getElementById('user2Section');
+
+            if (userSection1 && userSection2) {
+                userSection1.style.setProperty('--name-offset', `${nameOffset}px`);
+                userSection2.style.setProperty('--name-offset', `${nameOffset}px`);
+            }
+
                         // Debug logging - always show final positions for sync checking
             const finalCenter1X = center1X + circleOffset;
             const finalCenter2X = center2X - circleOffset;
@@ -367,7 +383,7 @@ class BPMDashboard {
                     console.log(`⚠️ FLOORED TO SYNC: Raw diff=${difference.toFixed(3)} floored to 0, but circles still ${finalDistance.toFixed(1)}px apart`);
                 }
             } else {
-                console.log(`🔗 Circle offset: ${circleOffset.toFixed(1)}px (raw: ${difference.toFixed(1)}, floored: ${flooredDiff} BPM difference), Final distance: ${finalDistance.toFixed(1)}px`);
+                console.log(`🔗 Circle offset: ${circleOffset.toFixed(1)}px, Name offset: ${nameOffset.toFixed(1)}px (raw: ${difference.toFixed(1)}, floored: ${flooredDiff} BPM difference), Final distance: ${finalDistance.toFixed(1)}px`);
             }
         }
     }

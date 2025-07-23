@@ -16,51 +16,50 @@ import random
 import math
 import threading
 import argparse
-from typing import List
 
 # Default configuration
 DEFAULT_BROKER_HOST = "localhost"
 DEFAULT_BROKER_PORT = 8888
 DEFAULT_USERS = 2
-DEFAULT_RATE = 2.0  # messages per second
+DEFAULT_RATE = 1.0  # messages per second
+
+# Shared beat counter across threads
+global_beat_count = 0
+global_beat_lock = threading.Lock()
 
 class HeartRateSimulator:
-    """Simulates realistic heart rate patterns for testing"""
+    """Simulates patterned heart rate for cyclic synchrony/divergence"""
 
     def __init__(self, user_id: int, base_bpm: float = 75.0):
         self.user_id = user_id
         self.base_bpm = base_bpm
-        self.time_offset = random.uniform(0, 2 * math.pi)  # Random phase offset
-        self.noise_level = 3.0  # Standard deviation of noise
-        self.trend_amplitude = 10.0  # How much the base rate can vary
-        self.trend_period = 30.0  # Seconds for a complete trend cycle
-        self.start_time = time.time()
 
-        # Occasional outliers
-        self.outlier_probability = 0.05  # 5% chance of outlier
-        self.outlier_magnitude = 25.0
+    def get_bpm(self, beat_count: int) -> float:
+        """Generate BPM based on cyclic synchronization logic"""
+        cycle_beat = beat_count % 40  # 0–39 beats per cycle
+        delta = 0
 
-    def get_bpm(self) -> float:
-        """Generate a realistic heart rate value"""
-        elapsed = time.time() - self.start_time
+        if cycle_beat < 20:
+            # Perfect sync for 20 beats
+            delta = 0
+        elif 20 <= cycle_beat < 30:
+            # Diverge linearly (e.g., ±10 BPM)
+            progress = (cycle_beat - 20) / 10.0
+            delta = 10 * progress
+        else:
+            # Converge linearly back
+            progress = (cycle_beat - 30) / 10.0
+            delta = 10 * (1 - progress)
 
-        # Base trend (slow variation)
-        trend = self.trend_amplitude * math.sin(2 * math.pi * elapsed / self.trend_period + self.time_offset)
+        # Alternate users go in opposite directions
+        if self.user_id % 2 == 0:
+            bpm = self.base_bpm + delta
+        else:
+            bpm = self.base_bpm - delta
 
-        # Breathing pattern (faster variation)
-        breathing = 2.0 * math.sin(2 * math.pi * elapsed / 4.0 + self.time_offset)
+        # Small noise
+        bpm += random.gauss(0, 1.0)
 
-        # Random noise
-        noise = random.gauss(0, self.noise_level)
-
-        # Occasional outliers
-        if random.random() < self.outlier_probability:
-            outlier = random.choice([-1, 1]) * random.uniform(15, self.outlier_magnitude)
-            noise += outlier
-
-        bpm = self.base_bpm + trend + breathing + noise
-
-        # Ensure reasonable bounds
         return max(40, min(200, bpm))
 
 class BPMDataSender:
@@ -78,7 +77,7 @@ class BPMDataSender:
             "bpm": round(bpm, 2),
             "timestamp": time.time(),
             "device_id": f"ESP32_SIM_{user_id:02d}",
-            "signal_strength": random.randint(-70, -30),  # Simulated WiFi signal strength
+            "signal_strength": random.randint(-70, -30),
         }
 
         if additional_data:
@@ -93,12 +92,11 @@ class BPMDataSender:
             return False
 
     def close(self):
-        """Close the socket"""
         self.socket.close()
 
 def simulate_user(user_id: int, host: str, port: int, rate: float, duration: float):
     """Simulate a single user sending heart rate data"""
-    simulator = HeartRateSimulator(user_id, base_bpm=70 + user_id * 5)  # Different base rates
+    simulator = HeartRateSimulator(user_id, base_bpm=75.0)
     sender = BPMDataSender(host, port)
 
     print(f"Starting simulation for User {user_id} (base BPM: {simulator.base_bpm:.1f})")
@@ -109,7 +107,13 @@ def simulate_user(user_id: int, host: str, port: int, rate: float, duration: flo
 
     try:
         while time.time() - start_time < duration:
-            bpm = simulator.get_bpm()
+            # Get and increment shared beat count
+            global global_beat_count
+            with global_beat_lock:
+                beat_count = global_beat_count
+                global_beat_count += 1
+
+            bpm = simulator.get_bpm(beat_count)
 
             success = sender.send_data(user_id, bpm)
             if success:
@@ -158,12 +162,9 @@ def main():
         )
         threads.append(thread)
         thread.start()
-
-        # Stagger the start times slightly
         time.sleep(0.5)
 
     try:
-        # Wait for all threads
         for thread in threads:
             thread.join()
     except KeyboardInterrupt:

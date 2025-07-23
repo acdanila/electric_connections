@@ -82,6 +82,17 @@ body {
     color: #999;
     letter-spacing: 0.5px;
     text-align: center;
+    --name-offset: 0px; /* How much to move names toward/away from center */
+    transition: transform 2s ease; /* Smooth movement transitions */
+}
+
+/* User names move with their respective circles */
+.user-1 .user-name {
+    transform: translateX(var(--name-offset));
+}
+
+.user-2 .user-name {
+    transform: translateX(calc(-1 * var(--name-offset)));
 }
 
 /* Point Circle System - Touch Designer Aesthetic */
@@ -223,18 +234,7 @@ body {
     width: 100px; /* Minimal space */
 }
 
-/* BPM Display */
-.bpm-display {
-    text-align: center;
-}
 
-.bpm-number {
-    font-size: 72px;
-    font-weight: 300;
-    line-height: 1;
-    color: #ffffff;
-    font-variant-numeric: tabular-nums;
-}
 
 
 
@@ -256,9 +256,7 @@ body {
         padding: 0 40px;
     }
 
-    .bpm-number {
-        font-size: 60px;
-    }
+
 }
 
 @media (max-width: 768px) {
@@ -293,9 +291,16 @@ body {
         transform: translateX(calc(-1 * var(--circle-offset) * 0.6));
     }
 
-    .bpm-number {
-        font-size: 48px;
+    /* Names also move less on mobile */
+    .user-1 .user-name {
+        transform: translateX(calc(var(--name-offset) * 0.6));
     }
+
+    .user-2 .user-name {
+        transform: translateX(calc(-1 * var(--name-offset) * 0.6));
+    }
+
+
 
     .user-name {
         font-size: 20px;
