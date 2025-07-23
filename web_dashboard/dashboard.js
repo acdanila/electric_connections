@@ -31,7 +31,7 @@ class BPMDashboard {
                 readingCounter: 0 // Track readings to reduce update frequency
             }
         };
-        this.syncThreshold = 4; // BPM difference for sync detection (matches circle conjoining)
+        this.syncThreshold = 1; // BPM difference for sync detection (matches circle conjoining)
         this.syncTime = 0; // Percentage of time in sync
         this.syncHistory = [];
         this.maxSyncHistory = 100;
@@ -39,7 +39,7 @@ class BPMDashboard {
         this.updateFrequency = 3000; // Max once every 3 seconds (reduced from 2s)
         this.noHeartRateThreshold = 2; // Show "--" after 2 consecutive no-heart-rate readings
         this.dataTimeoutMs = 2000; // Show "--" after 2 seconds of no data (quick response to disconnection)
-        this.readingSkipCount = 2; // Process every 2nd reading for stability
+        this.readingSkipCount = 1; // Process every 2nd reading for stability
         this.lastSyncDifference = undefined; // Track previous sync difference for change detection
 
         this.init();

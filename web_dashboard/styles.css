@@ -95,7 +95,7 @@ body {
     transform: translateX(calc(-1 * var(--name-offset)));
 }
 
-/* Point Circle System - Touch Designer Aesthetic */
+/* Point Circle System - Touch Designer Aesthetic with Multiple Rings */
 .point-circle-container {
     position: relative;
     width: 200px;
@@ -120,7 +120,9 @@ body {
     width: 160px;
     height: 160px;
     --base-radius: 80px;
-    --circle-radius: var(--base-radius); /* Keep circle radius constant */
+    --middle-radius: 50px;
+    --inner-radius: 25px;
+    --center-radius: 8px;
     --chaos-factor: 0; /* 0 = stable (60 BPM), 1 = max chaos (120 BPM) */
     --point-size: 8px;
     --animation-speed: 2s;
@@ -135,95 +137,263 @@ body {
     border-radius: 50%;
     box-shadow: 0 0 15px rgba(var(--sync-color), 0.6);
     transition: all 2s cubic-bezier(0.4, 0, 0.2, 1);
-    transform-origin: center;
 }
 
-/* Dynamic positioning based on sync factor - points move toward center as they sync */
-.circle-point.point-1 {
-    left: calc(50% + var(--circle-radius) - var(--point-size) / 2);
-    top: calc(50% + 0px - var(--point-size) / 2);
+/* Random positioning for outer points within the circle */
+.outer-point.point-1 {
+    left: calc(50% + 65px - var(--point-size) / 2);
+    top: calc(50% - 20px - var(--point-size) / 2);
+    transform-origin: -65px 20px;
 }
-.circle-point.point-2 {
-    left: calc(50% + var(--circle-radius) * 0.95 - var(--point-size) / 2);
-    top: calc(50% + var(--circle-radius) * 0.31 - var(--point-size) / 2);
+.outer-point.point-2 {
+    left: calc(50% + 45px - var(--point-size) / 2);
+    top: calc(50% + 55px - var(--point-size) / 2);
+    transform-origin: -45px -55px;
 }
-.circle-point.point-3 {
-    left: calc(50% + var(--circle-radius) * 0.78 - var(--point-size) / 2);
-    top: calc(50% + var(--circle-radius) * 0.59 - var(--point-size) / 2);
+.outer-point.point-3 {
+    left: calc(50% - 30px - var(--point-size) / 2);
+    top: calc(50% + 70px - var(--point-size) / 2);
+    transform-origin: 30px -70px;
 }
-.circle-point.point-4 {
-    left: calc(50% + var(--circle-radius) * 0.49 - var(--point-size) / 2);
-    top: calc(50% + var(--circle-radius) * 0.81 - var(--point-size) / 2);
+.outer-point.point-4 {
+    left: calc(50% - 60px - var(--point-size) / 2);
+    top: calc(50% + 25px - var(--point-size) / 2);
+    transform-origin: 60px -25px;
 }
-.circle-point.point-5 {
-    left: calc(50% + var(--circle-radius) * 0.12 - var(--point-size) / 2);
-    top: calc(50% + var(--circle-radius) * 0.95 - var(--point-size) / 2);
+.outer-point.point-5 {
+    left: calc(50% - 75px - var(--point-size) / 2);
+    top: calc(50% - 15px - var(--point-size) / 2);
+    transform-origin: 75px 15px;
 }
-.circle-point.point-6 {
-    left: calc(50% + 0px - var(--point-size) / 2);
-    top: calc(50% + var(--circle-radius) - var(--point-size) / 2);
+.outer-point.point-6 {
+    left: calc(50% - 40px - var(--point-size) / 2);
+    top: calc(50% - 65px - var(--point-size) / 2);
+    transform-origin: 40px 65px;
 }
-.circle-point.point-7 {
-    left: calc(50% - var(--circle-radius) * 0.31 - var(--point-size) / 2);
-    top: calc(50% + var(--circle-radius) * 0.95 - var(--point-size) / 2);
+.outer-point.point-7 {
+    left: calc(50% + 20px - var(--point-size) / 2);
+    top: calc(50% - 75px - var(--point-size) / 2);
+    transform-origin: -20px 75px;
 }
-.circle-point.point-8 {
-    left: calc(50% - var(--circle-radius) * 0.59 - var(--point-size) / 2);
-    top: calc(50% + var(--circle-radius) * 0.78 - var(--point-size) / 2);
+.outer-point.point-8 {
+    left: calc(50% + 70px - var(--point-size) / 2);
+    top: calc(50% - 35px - var(--point-size) / 2);
+    transform-origin: -70px 35px;
 }
-.circle-point.point-9 {
-    left: calc(50% - var(--circle-radius) * 0.81 - var(--point-size) / 2);
-    top: calc(50% + var(--circle-radius) * 0.49 - var(--point-size) / 2);
+.outer-point.point-9 {
+    left: calc(50% + 55px - var(--point-size) / 2);
+    top: calc(50% + 40px - var(--point-size) / 2);
+    transform-origin: -55px -40px;
 }
-.circle-point.point-10 {
-    left: calc(50% - var(--circle-radius) * 0.95 - var(--point-size) / 2);
-    top: calc(50% + var(--circle-radius) * 0.12 - var(--point-size) / 2);
+.outer-point.point-10 {
+    left: calc(50% + 15px - var(--point-size) / 2);
+    top: calc(50% + 75px - var(--point-size) / 2);
+    transform-origin: -15px -75px;
 }
-.circle-point.point-11 {
-    left: calc(50% - var(--circle-radius) - var(--point-size) / 2);
-    top: calc(50% + 0px - var(--point-size) / 2);
+.outer-point.point-11 {
+    left: calc(50% - 50px - var(--point-size) / 2);
+    top: calc(50% + 50px - var(--point-size) / 2);
+    transform-origin: 50px -50px;
 }
-.circle-point.point-12 {
-    left: calc(50% - var(--circle-radius) * 0.95 - var(--point-size) / 2);
-    top: calc(50% - var(--circle-radius) * 0.31 - var(--point-size) / 2);
+.outer-point.point-12 {
+    left: calc(50% - 70px - var(--point-size) / 2);
+    top: calc(50% + 10px - var(--point-size) / 2);
+    transform-origin: 70px -10px;
 }
-.circle-point.point-13 {
-    left: calc(50% - var(--circle-radius) * 0.78 - var(--point-size) / 2);
-    top: calc(50% - var(--circle-radius) * 0.59 - var(--point-size) / 2);
+.outer-point.point-13 {
+    left: calc(50% - 65px - var(--point-size) / 2);
+    top: calc(50% - 30px - var(--point-size) / 2);
+    transform-origin: 65px 30px;
 }
-.circle-point.point-14 {
-    left: calc(50% - var(--circle-radius) * 0.49 - var(--point-size) / 2);
-    top: calc(50% - var(--circle-radius) * 0.81 - var(--point-size) / 2);
+.outer-point.point-14 {
+    left: calc(50% - 25px - var(--point-size) / 2);
+    top: calc(50% - 70px - var(--point-size) / 2);
+    transform-origin: 25px 70px;
 }
-.circle-point.point-15 {
-    left: calc(50% - var(--circle-radius) * 0.12 - var(--point-size) / 2);
-    top: calc(50% - var(--circle-radius) * 0.95 - var(--point-size) / 2);
+.outer-point.point-15 {
+    left: calc(50% + 35px - var(--point-size) / 2);
+    top: calc(50% - 60px - var(--point-size) / 2);
+    transform-origin: -35px 60px;
 }
-.circle-point.point-16 {
-    left: calc(50% + 0px - var(--point-size) / 2);
-    top: calc(50% - var(--circle-radius) - var(--point-size) / 2);
+.outer-point.point-16 {
+    left: calc(50% + 75px - var(--point-size) / 2);
+    top: calc(50% - 5px - var(--point-size) / 2);
+    transform-origin: -75px 5px;
 }
-.circle-point.point-17 {
-    left: calc(50% + var(--circle-radius) * 0.31 - var(--point-size) / 2);
-    top: calc(50% - var(--circle-radius) * 0.95 - var(--point-size) / 2);
+.outer-point.point-17 {
+    left: calc(50% + 60px - var(--point-size) / 2);
+    top: calc(50% + 30px - var(--point-size) / 2);
+    transform-origin: -60px -30px;
 }
-.circle-point.point-18 {
-    left: calc(50% + var(--circle-radius) * 0.59 - var(--point-size) / 2);
-    top: calc(50% - var(--circle-radius) * 0.78 - var(--point-size) / 2);
+.outer-point.point-18 {
+    left: calc(50% + 25px - var(--point-size) / 2);
+    top: calc(50% + 65px - var(--point-size) / 2);
+    transform-origin: -25px -65px;
 }
-.circle-point.point-19 {
-    left: calc(50% + var(--circle-radius) * 0.81 - var(--point-size) / 2);
-    top: calc(50% - var(--circle-radius) * 0.49 - var(--point-size) / 2);
+.outer-point.point-19 {
+    left: calc(50% - 15px - var(--point-size) / 2);
+    top: calc(50% + 60px - var(--point-size) / 2);
+    transform-origin: 15px -60px;
 }
-.circle-point.point-20 {
-    left: calc(50% + var(--circle-radius) * 0.95 - var(--point-size) / 2);
-    top: calc(50% - var(--circle-radius) * 0.12 - var(--point-size) / 2);
+.outer-point.point-20 {
+    left: calc(50% - 45px - var(--point-size) / 2);
+    top: calc(50% + 35px - var(--point-size) / 2);
+    transform-origin: 45px -35px;
 }
 
-/* Base animation that responds to chaos factor */
-.circle-point {
-    animation: dynamicRotation var(--animation-speed) linear infinite;
+/* Random positioning for middle points */
+.middle-point.middle-1 {
+    left: calc(50% + 40px - var(--point-size) / 2);
+    top: calc(50% - 10px - var(--point-size) / 2);
+    transform-origin: -40px 10px;
 }
+.middle-point.middle-2 {
+    left: calc(50% + 25px - var(--point-size) / 2);
+    top: calc(50% + 35px - var(--point-size) / 2);
+    transform-origin: -25px -35px;
+}
+.middle-point.middle-3 {
+    left: calc(50% - 20px - var(--point-size) / 2);
+    top: calc(50% + 45px - var(--point-size) / 2);
+    transform-origin: 20px -45px;
+}
+.middle-point.middle-4 {
+    left: calc(50% - 45px - var(--point-size) / 2);
+    top: calc(50% + 15px - var(--point-size) / 2);
+    transform-origin: 45px -15px;
+}
+.middle-point.middle-5 {
+    left: calc(50% - 35px - var(--point-size) / 2);
+    top: calc(50% - 25px - var(--point-size) / 2);
+    transform-origin: 35px 25px;
+}
+.middle-point.middle-6 {
+    left: calc(50% - 10px - var(--point-size) / 2);
+    top: calc(50% - 40px - var(--point-size) / 2);
+    transform-origin: 10px 40px;
+}
+.middle-point.middle-7 {
+    left: calc(50% + 30px - var(--point-size) / 2);
+    top: calc(50% - 35px - var(--point-size) / 2);
+    transform-origin: -30px 35px;
+}
+.middle-point.middle-8 {
+    left: calc(50% + 45px - var(--point-size) / 2);
+    top: calc(50% + 20px - var(--point-size) / 2);
+    transform-origin: -45px -20px;
+}
+.middle-point.middle-9 {
+    left: calc(50% + 15px - var(--point-size) / 2);
+    top: calc(50% + 40px - var(--point-size) / 2);
+    transform-origin: -15px -40px;
+}
+.middle-point.middle-10 {
+    left: calc(50% - 25px - var(--point-size) / 2);
+    top: calc(50% + 30px - var(--point-size) / 2);
+    transform-origin: 25px -30px;
+}
+.middle-point.middle-11 {
+    left: calc(50% - 40px - var(--point-size) / 2);
+    top: calc(50% - 15px - var(--point-size) / 2);
+    transform-origin: 40px 15px;
+}
+.middle-point.middle-12 {
+    left: calc(50% + 10px - var(--point-size) / 2);
+    top: calc(50% - 30px - var(--point-size) / 2);
+    transform-origin: -10px 30px;
+}
+
+/* Random positioning for inner points */
+.inner-point.inner-1 {
+    left: calc(50% + 20px - var(--point-size) / 2);
+    top: calc(50% - 5px - var(--point-size) / 2);
+    transform-origin: -20px 5px;
+}
+.inner-point.inner-2 {
+    left: calc(50% + 15px - var(--point-size) / 2);
+    top: calc(50% + 18px - var(--point-size) / 2);
+    transform-origin: -15px -18px;
+}
+.inner-point.inner-3 {
+    left: calc(50% - 8px - var(--point-size) / 2);
+    top: calc(50% + 22px - var(--point-size) / 2);
+    transform-origin: 8px -22px;
+}
+.inner-point.inner-4 {
+    left: calc(50% - 22px - var(--point-size) / 2);
+    top: calc(50% + 8px - var(--point-size) / 2);
+    transform-origin: 22px -8px;
+}
+.inner-point.inner-5 {
+    left: calc(50% - 18px - var(--point-size) / 2);
+    top: calc(50% - 15px - var(--point-size) / 2);
+    transform-origin: 18px 15px;
+}
+.inner-point.inner-6 {
+    left: calc(50% - 5px - var(--point-size) / 2);
+    top: calc(50% - 20px - var(--point-size) / 2);
+    transform-origin: 5px 20px;
+}
+.inner-point.inner-7 {
+    left: calc(50% + 12px - var(--point-size) / 2);
+    top: calc(50% - 18px - var(--point-size) / 2);
+    transform-origin: -12px 18px;
+}
+.inner-point.inner-8 {
+    left: calc(50% + 22px - var(--point-size) / 2);
+    top: calc(50% + 12px - var(--point-size) / 2);
+    transform-origin: -22px -12px;
+}
+
+/* Random positioning for center points */
+.center-point.center-1 {
+    left: calc(50% + 8px - var(--point-size) / 2);
+    top: calc(50% - 3px - var(--point-size) / 2);
+    transform-origin: -8px 3px;
+}
+.center-point.center-2 {
+    left: calc(50% - 2px - var(--point-size) / 2);
+    top: calc(50% + 7px - var(--point-size) / 2);
+    transform-origin: 2px -7px;
+}
+.center-point.center-3 {
+    left: calc(50% - 7px - var(--point-size) / 2);
+    top: calc(50% - 2px - var(--point-size) / 2);
+    transform-origin: 7px 2px;
+}
+.center-point.center-4 {
+    left: calc(50% + 3px - var(--point-size) / 2);
+    top: calc(50% - 8px - var(--point-size) / 2);
+    transform-origin: -3px 8px;
+}
+
+/* Animation system - User 1 points orbit clockwise, User 2 counter-clockwise */
+.user-1 .circle-point {
+    animation: orbitClockwise var(--animation-speed) linear infinite;
+}
+
+.user-2 .circle-point {
+    animation: orbitCounterClockwise var(--animation-speed) linear infinite;
+}
+
+/* Different speeds for different rings to create visual depth */
+.outer-point {
+    animation-duration: calc(var(--animation-speed) * 1);
+}
+
+.middle-point {
+    animation-duration: calc(var(--animation-speed) * 0.8);
+}
+
+.inner-point {
+    animation-duration: calc(var(--animation-speed) * 0.6);
+}
+
+.center-point {
+    animation-duration: calc(var(--animation-speed) * 0.4);
+}
+
+
 
 /* Sync section - clean and minimal */
 .sync-section {
@@ -327,46 +497,33 @@ body {
     }
 }
 
-/* Dynamic animation keyframe that responds to chaos and sync factors */
-@keyframes dynamicRotation {
+/* Orbit keyframes - points orbit around the center of their circle */
+@keyframes orbitClockwise {
     0% {
-        transform:
-            rotate(0deg)
-            scale(calc(0.8 + var(--chaos-factor) * 0.4))
-            translateX(calc(var(--chaos-factor) * 15px))
-            translateY(calc(var(--chaos-factor) * 10px));
+        transform: rotate(0deg) scale(calc(0.8 + var(--chaos-factor) * 0.4));
         opacity: calc(0.7 + var(--chaos-factor) * 0.3);
     }
-    25% {
-        transform:
-            rotate(90deg)
-            scale(calc(0.9 + var(--chaos-factor) * 0.5))
-            translateX(calc(var(--chaos-factor) * -12px))
-            translateY(calc(var(--chaos-factor) * 18px));
-        opacity: calc(0.8 + var(--chaos-factor) * 0.2);
-    }
     50% {
-        transform:
-            rotate(180deg)
-            scale(calc(1.0 + var(--chaos-factor) * 0.6))
-            translateX(calc(var(--chaos-factor) * 20px))
-            translateY(calc(var(--chaos-factor) * -15px));
+        transform: rotate(180deg) scale(calc(1.0 + var(--chaos-factor) * 0.3));
         opacity: 1;
     }
-    75% {
-        transform:
-            rotate(270deg)
-            scale(calc(0.9 + var(--chaos-factor) * 0.3))
-            translateX(calc(var(--chaos-factor) * -18px))
-            translateY(calc(var(--chaos-factor) * -8px));
-        opacity: calc(0.8 + var(--chaos-factor) * 0.2);
+    100% {
+        transform: rotate(360deg) scale(calc(0.8 + var(--chaos-factor) * 0.4));
+        opacity: calc(0.7 + var(--chaos-factor) * 0.3);
+    }
+}
+
+@keyframes orbitCounterClockwise {
+    0% {
+        transform: rotate(0deg) scale(calc(0.8 + var(--chaos-factor) * 0.4));
+        opacity: calc(0.7 + var(--chaos-factor) * 0.3);
+    }
+    50% {
+        transform: rotate(-180deg) scale(calc(1.0 + var(--chaos-factor) * 0.3));
+        opacity: 1;
     }
     100% {
-        transform:
-            rotate(360deg)
-            scale(calc(0.8 + var(--chaos-factor) * 0.4))
-            translateX(calc(var(--chaos-factor) * 15px))
-            translateY(calc(var(--chaos-factor) * 10px));
+        transform: rotate(-360deg) scale(calc(0.8 + var(--chaos-factor) * 0.4));
         opacity: calc(0.7 + var(--chaos-factor) * 0.3);
     }
 }
