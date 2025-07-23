@@ -31,7 +31,7 @@ class BPMDashboard {
                 readingCounter: 0 // Track readings to reduce update frequency
             }
         };
-        this.syncThreshold = 8; // BPM difference for sync detection
+        this.syncThreshold = 4; // BPM difference for sync detection (matches circle conjoining)
         this.syncTime = 0; // Percentage of time in sync
         this.syncHistory = [];
         this.maxSyncHistory = 100;
@@ -40,7 +40,7 @@ class BPMDashboard {
         this.noHeartRateThreshold = 2; // Show "--" after 2 consecutive no-heart-rate readings
         this.dataTimeoutMs = 8000; // Show "--" after 8 seconds of no data (increased for stability)
         this.readingSkipCount = 2; // Process every 2nd reading for stability
-        this.colorTransitionTimeout = null; // For smooth color transitions
+        this.lastSyncDifference = undefined; // Track previous sync difference for change detection
 
         this.init();
     }
@@ -68,6 +68,16 @@ class BPMDashboard {
         if (container1 && container2) {
             container1.style.setProperty('--circle-offset', '0px'); // Normal position = max separation
             container2.style.setProperty('--circle-offset', '0px'); // Normal position = max separation
+            console.log('🔧 Initialized circles at normal position (0px offset)');
+        }
+
+        // Initialize names at normal position too
+        const userSection1 = document.getElementById('user1Section');
+        const userSection2 = document.getElementById('user2Section');
+        if (userSection1 && userSection2) {
+            userSection1.style.setProperty('--name-offset', '0px');
+            userSection2.style.setProperty('--name-offset', '0px');
+            console.log('🔧 Initialized names at normal position (0px offset)');
         }
 
         // Load user names
@@ -188,6 +198,12 @@ class BPMDashboard {
         }
         this.lastUpdateTimes[userId] = now;
 
+        // Debug: Log data reception
+        console.log(`🔄 User ${userId}: Received BPM=${data.bpm} (reading #${user.readingCounter})`);
+
+        // Store previous BPM for change detection
+        const previousBpm = user.bpm;
+
         // Trust the broker completely - if it sends "--", show it immediately
         if (data.bpm === "--") {
             user.bpm = "--";
@@ -219,14 +235,26 @@ class BPMDashboard {
         user.signal = data.signal_strength || 0;
         user.lastUpdate = new Date();
 
-        // Update UI immediately (no throttling)
-        this.updateUserUI(userId);
+        // **CHANGE DETECTION**: Only update visuals if BPM actually changed
+        const bpmChanged = previousBpm !== user.bpm;
 
-        // Update point circle animation based on BPM
-        this.updatePointCircleAnimation(userId);
+        if (bpmChanged) {
+            console.log(`🔄 User ${userId}: BPM changed from ${previousBpm} to ${user.bpm} - updating visuals`);
 
-        // Check sync with proper handling of "--" values
-        this.checkSync();
+            // Update UI immediately (no throttling)
+            this.updateUserUI(userId);
+
+            // Update point circle animation based on BPM
+            this.updatePointCircleAnimation(userId);
+
+            // Check sync with proper handling of "--" values
+            this.checkSync();
+        } else {
+            console.log(`⏸️ User ${userId}: BPM unchanged (${user.bpm}) - skipping visual updates`);
+
+            // Still update UI for other non-visual changes (like signal strength)
+            this.updateUserUI(userId);
+        }
 
         const displayBpm = user.bpm === "--" ? "--" : `${user.bpm} BPM`;
         console.log(`User ${userId}: ${displayBpm} (reading #${user.readingCounter})`);
@@ -283,17 +311,39 @@ class BPMDashboard {
         const user1Valid = user1Bpm !== "--" && user1Bpm > 0;
         const user2Valid = user2Bpm !== "--" && user2Bpm > 0;
 
+        console.log(`🔍 Sync Check: User1=${user1Bpm} (valid=${user1Valid}), User2=${user2Bpm} (valid=${user2Valid})`);
+
+        // **OPTIMIZATION**: Check if sync state would actually change before updating
+        let difference;
+        let isInSync;
+
+        if (!user1Valid || !user2Valid) {
+            difference = 20; // Default to maximum difference (no sync)
+            isInSync = false;
+        } else {
+            difference = Math.abs(user1Bpm - user2Bpm);
+            isInSync = difference <= this.syncThreshold;
+        }
+
+        // Check if this sync check would result in the same visual state
+        if (this.lastSyncDifference !== undefined && Math.abs(this.lastSyncDifference - difference) < 0.01) {
+            console.log(`⏸️ Sync state unchanged (diff: ${difference.toFixed(1)}) - skipping visual updates`);
+            return;
+        }
+
+        // Store the current difference for future comparisons
+        this.lastSyncDifference = difference;
+        console.log(`🔄 Sync state changed - updating visuals (new diff: ${difference.toFixed(1)})`);
+
         if (!user1Valid || !user2Valid) {
             // If one or both heart beats drop, meld dots and move back to starting position
+            console.log(`💔 No valid data: User1=${user1Valid ? user1Bpm.toFixed(1) : '--'}, User2=${user2Valid ? user2Bpm.toFixed(1) : '--'} → Setting RED`);
             this.setSyncState(false, 20);
             this.updatePointCircleSyncStates(20); // Normal starting position (0 offset)
             if (!user1Valid) this.setPointCircleState(1, 'no-data');
             if (!user2Valid) this.setPointCircleState(2, 'no-data');
             return;
         }
-
-        const difference = Math.abs(user1Bpm - user2Bpm);
-        const isInSync = difference <= this.syncThreshold;
 
         console.log(`💓 Sync Check: User1=${user1Bpm.toFixed(1)} BPM, User2=${user2Bpm.toFixed(1)} BPM, Difference=${difference.toFixed(1)} BPM`);
 
@@ -314,11 +364,13 @@ class BPMDashboard {
 
     updatePointCircleSyncStates(difference) {
         // Calculate circle offset based on BPM difference
-        // Round down the difference so 0.9 becomes 0 (perfect sync) - accounts for sensor precision
-        // 0 difference = circles come together (positive offset - User1 moves right, User2 moves left)
+        // Circles conjoin at difference <= 4 BPM
+        // 0-4 difference = circles come together (full offset - User1 moves right, User2 moves left)
         // 20 difference = circles at normal starting positions (0 offset)
-        const flooredDiff = Math.floor(difference);
-        const clampedDiff = Math.max(0, Math.min(20, flooredDiff));
+        const clampedDiff = Math.max(0, Math.min(20, difference));
+
+        // If difference <= 4, treat it as perfect sync (circles meet)
+        const syncDiff = clampedDiff <= 4 ? 0 : clampedDiff;
 
         // Get actual positions of circle containers to calculate exact distance needed
         const container1 = document.getElementById('pointCircleContainer1');
@@ -336,15 +388,15 @@ class BPMDashboard {
             // Each circle needs to move exactly half the distance to meet in the middle
             const maxMovement = distanceBetweenCenters / 2;
 
-            // Calculate: 0 diff = move full distance toward each other, 20 diff = 0px (normal position)
-            const circleOffset = maxMovement * (1 - clampedDiff / 20);
+                        // Calculate: 0-4 diff = circles meet (move full distance), 20 diff = 0px (normal position)
+            const circleOffset = maxMovement * (1 - syncDiff / 20);
 
             container1.style.setProperty('--circle-offset', `${circleOffset}px`);
             container2.style.setProperty('--circle-offset', `${circleOffset}px`);
 
             // Calculate name offset - names stop moving when circles get close to prevent overlap
-            // Names move with circles when difference > 5 BPM, but stop when circles get too close
-            const nameMovementThreshold = 5; // BPM difference below which names stop moving
+            // Names move with circles when difference > 6 BPM, but stop when circles get too close
+            const nameMovementThreshold = 6; // BPM difference below which names stop moving
             let nameOffset;
 
             if (clampedDiff > nameMovementThreshold) {
@@ -371,19 +423,19 @@ class BPMDashboard {
             const finalCenter2X = center2X - circleOffset;
             const finalDistance = Math.abs(finalCenter2X - finalCenter1X);
 
-                        if (difference <= 2) {
-                console.log(`🔗 DEBUG: Raw diff: ${difference.toFixed(3)}, Floored diff: ${flooredDiff}, Clamped diff: ${clampedDiff}`);
+                        if (difference <= 5) {
+                console.log(`🔗 DEBUG: Raw diff: ${difference.toFixed(3)}, Sync diff: ${syncDiff}, Clamped diff: ${clampedDiff.toFixed(1)}`);
                 console.log(`🔗 Distance between centers: ${distanceBetweenCenters.toFixed(1)}px, maxMovement: ${maxMovement.toFixed(1)}px, circleOffset: ${circleOffset.toFixed(1)}px`);
                 console.log(`🔗 Final Centers: ${finalCenter1X.toFixed(1)}px, ${finalCenter2X.toFixed(1)}px, Final Distance: ${finalDistance.toFixed(1)}px`);
 
                 // Check if they're actually meeting (within 1 pixel is close enough)
                 if (finalDistance <= 1) {
                     console.log(`✅ PERFECT SYNC: Circles are meeting in the middle! (Raw diff: ${difference.toFixed(3)})`);
-                } else if (flooredDiff === 0) {
-                    console.log(`⚠️ FLOORED TO SYNC: Raw diff=${difference.toFixed(3)} floored to 0, but circles still ${finalDistance.toFixed(1)}px apart`);
+                } else if (difference <= 4) {
+                    console.log(`🔗 CONJOINED: Raw diff=${difference.toFixed(3)} <= 4, circles should be together but ${finalDistance.toFixed(1)}px apart`);
                 }
             } else {
-                console.log(`🔗 Circle offset: ${circleOffset.toFixed(1)}px, Name offset: ${nameOffset.toFixed(1)}px (raw: ${difference.toFixed(1)}, floored: ${flooredDiff} BPM difference), Final distance: ${finalDistance.toFixed(1)}px`);
+                console.log(`🔗 Circle offset: ${circleOffset.toFixed(1)}px, Name offset: ${nameOffset.toFixed(1)}px (raw: ${difference.toFixed(1)}, sync: ${syncDiff} BPM difference), Final distance: ${finalDistance.toFixed(1)}px`);
             }
         }
     }
@@ -393,14 +445,13 @@ class BPMDashboard {
         const clampedDiff = Math.min(Math.max(difference, 0), 20);
         const gradientColors = this.calculateGradientColors(clampedDiff);
 
-        // Set CSS custom properties for dynamic colors with a slight delay for stability
-        clearTimeout(this.colorTransitionTimeout);
-        this.colorTransitionTimeout = setTimeout(() => {
-            document.documentElement.style.setProperty('--sync-color', gradientColors);
-        }, 200); // 200ms delay to prevent rapid color changes
+        // Apply color immediately for more reliable behavior
+        // Remove the timeout delay that was causing inconsistency
+        document.documentElement.style.setProperty('--sync-color', gradientColors);
 
-        // Simplified logging - only show color when difference changes significantly
-        console.log(`🎨 Color: ${clampedDiff.toFixed(1)} BPM diff → RGB(${gradientColors})`);
+        // Enhanced logging to track color changes
+        const colorState = clampedDiff <= 4 ? 'GREEN' : clampedDiff <= 12 ? 'GREY' : 'RED';
+        console.log(`🎨 Color: ${clampedDiff.toFixed(1)} BPM diff → ${colorState} RGB(${gradientColors})`);
     }
 
     calculateGradientColors(difference) {
@@ -412,18 +463,23 @@ class BPMDashboard {
 
         let red, green, blue;
 
-        if (difference <= 10) {
-            // 0-10: Green (0,255,0) to Neutral (200,200,200)
-            const ratio = difference / 10; // 0 to 1
-            red = Math.round(200 * ratio);       // 0 → 200
-            green = Math.round(255 - (55 * ratio)); // 255 → 200
-            blue = Math.round(200 * ratio);      // 0 → 200
+        if (difference <= 4) {
+            // 0-4: Max green (perfect sync)
+            red = 0;
+            green = 255;
+            blue = 0;
+        } else if (difference <= 12) {
+            // 4-12: Green to Grey transition
+            const ratio = (difference - 4) / 8; // 0 to 1
+            red = Math.round(180 * ratio);       // 0 → 180 (grey)
+            green = Math.round(255 - (75 * ratio)); // 255 → 180 (grey)
+            blue = Math.round(180 * ratio);      // 0 → 180 (grey)
         } else {
-            // 10-20: Neutral (200,200,200) to Red (255,0,0)
-            const ratio = (difference - 10) / 10; // 0 to 1
-            red = Math.round(200 + (55 * ratio));    // 200 → 255
-            green = Math.round(200 * (1 - ratio));   // 200 → 0
-            blue = Math.round(200 * (1 - ratio));    // 200 → 0
+            // 12-20: Grey to Red transition
+            const ratio = (difference - 12) / 8; // 0 to 1
+            red = Math.round(180 + (75 * ratio));    // 180 → 255 (red)
+            green = Math.round(180 * (1 - ratio));   // 180 → 0
+            blue = Math.round(180 * (1 - ratio));    // 180 → 0
         }
 
         return `${red}, ${green}, ${blue}`;
